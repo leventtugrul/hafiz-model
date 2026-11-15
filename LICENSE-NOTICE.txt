@@ -1,0 +1,10 @@
+Hafız Yardımcı — okuma kontrol modeli (ONNX)
+
+Bu dosya aşağıdaki açık lisanslı modelden dönüştürülmüştür (ONNX, 8-bit dinamik nicemleme):
+  IqraEval/Iqra_wav2vec2_base — Apache License 2.0 — https://huggingface.co/IqraEval
+  Temel kodlayıcı: facebook/wav2vec2-base (Meta AI) — Apache License 2.0
+  Çalışma: El Kheir ve ark., "Towards a Unified Benchmark for Arabic Pronunciation Assessment:
+  Qur'anic Recitation as Case Study", Interspeech 2025.
+
+Değişiklikler: s3prl ağırlıkları ONNX'e aktarıldı; MatMul/Gemm/LSTM ağırlıkları 8-bit nicemlendi.
+Apache License 2.0 metni: https://www.apache.org/licenses/LICENSE-2.0

@@ -1,0 +1,39 @@
+name: Modeli dışa aktar ve yayımla
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Bağımlılıklar
+        run: |
+          pip install -q torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q s3prl onnx onnxruntime "huggingface_hub==0.25.2" "numpy<2" tensorboardX editdistance sentencepiece pyyaml tqdm soundfile librosa omegaconf
+          git clone -q --depth 1 https://github.com/Iqra-Eval/MSA_phonetiser.git /tmp/msa
+          git clone -q --depth 1 https://github.com/Iqra-Eval/interspeech_IqraEval.git /tmp/iqb
+          cp /tmp/iqb/vocab/sws_arabic.txt /tmp/dict.txt
+          python -c "from huggingface_hub import hf_hub_download as d; import shutil; shutil.copy(d('IqraEval/Iqra_wav2vec2_base','wave2vec2_base.ckpt'),'/tmp/model.ckpt')"
+      - name: ONNX'e çevir ve 8-bit sıkıştır
+        run: |
+          mkdir -p /tmp/aud && echo '[]' > /tmp/aud/cases.json
+          python tools/lab.py --ckpt /tmp/model.ckpt --dict /tmp/dict.txt --phonetiser /tmp/msa --data /tmp --audio /tmp/aud --out /tmp/onnx
+          ls -la /tmp/onnx/final
+      - name: Yayımla
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp NOTICE.txt /tmp/onnx/final/
+          gh release delete v1 -y --cleanup-tag 2>/dev/null || true
+          gh release create v1 /tmp/onnx/final/phoneme.onnx /tmp/onnx/final/vocab.json /tmp/onnx/final/NOTICE.txt \
+            --title "Okuma kontrol modeli v1" --notes "IqraEval/Iqra_wav2vec2_base (Apache-2.0) — ONNX, 8-bit."
